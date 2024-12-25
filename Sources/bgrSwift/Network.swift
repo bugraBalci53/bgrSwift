@@ -10,30 +10,34 @@ import Foundation
 open class Network {
     private let decoder = JSONDecoder()
     
-    public init() {}
-    
     public enum Method: String {
         case get = "GET"
         case post = "POST"
     }
     
+    public enum NetworkError: Error {
+        case requestError
+        case responseError
+        case undefined
+    }
+    
     public struct Model<T: Codable> {
-        public let url: URL?
+        public let urlString: String?
         public let responseModel: T.Type
         public let method: Method?
         public let parameters: [String: Any]?
         
-        public init(url: URL?, responseModel: T.Type, method: Method? = .get, parameters: [String: Any]? = nil) {
-            self.url = url
+        public init(urlString: String?, responseModel: T.Type, method: Method? = .get, parameters: [String: Any]? = nil) {
+            self.urlString = urlString
             self.responseModel = responseModel
             self.method = method
             self.parameters = parameters
         }
         
         var uRLComponents: URLComponents? {
-            guard let url = self.url else { return nil }
+            guard let url = self.urlString else { return nil }
             
-            var urlComp = URLComponents(string: url.absoluteString)
+            var urlComp = URLComponents(string: url)
             
             if let parameters = self.parameters, !parameters.isEmpty,
                self.method == .get {
@@ -61,11 +65,7 @@ open class Network {
         }
     }
     
-    public enum NetworkError: Error {
-        case requestError
-        case responseError
-        case undefined
-    }
+    public init() {}
     
     @available(iOS 15.0, *)
     public func request<T: Codable>(requestModel: Model<T>) async throws -> Result<T, Error> {
