@@ -42,9 +42,13 @@ open class Network {
             if let parameters = self.parameters, !parameters.isEmpty,
                self.method == .get {
                 
+                var queryItemArr: [URLQueryItem] = []
+                
                 parameters.forEach { (key, value) in
-                    urlComp?.queryItems?.append(URLQueryItem(name: key, value: String(describing: value)))
+                    queryItemArr.append(URLQueryItem(name: key, value: String(describing: value)))
                 }
+                
+                urlComp?.queryItems = queryItemArr
             }
             
             return urlComp
