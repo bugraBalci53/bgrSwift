@@ -17,7 +17,7 @@ public enum BGRNetworkError: Error {
     case responseError(errorMessage: String)
     case decodingError(errorMessage: String)
     
-    var errorMessage: String {
+    public var errorMessage: String {
         switch self {
         case .requestError(let errorMessage), .responseError(let errorMessage), .decodingError(let errorMessage):
             return errorMessage
@@ -27,7 +27,7 @@ public enum BGRNetworkError: Error {
 
 protocol BGRNetwork {
     var decoder: JSONDecoder { get }
-    func request<T: Codable>(model: RequestModel<T>) async throws -> T
+    func request<T: Decodable>(model: RequestModel<T>, completion: @escaping (Result<T, BGRNetworkError>) -> Void) async
 }
 
 public struct NetworkNew: BGRNetwork {
@@ -38,25 +38,7 @@ public struct NetworkNew: BGRNetwork {
         return decoder
     }()
     
-    @discardableResult public func request<T: Codable>(model: RequestModel<T>) async throws -> T {
-        guard let uRLRequest = model.uRLRequest else { throw BGRNetworkError.requestError(errorMessage: "Something went wrong! Please check your URL.") }
-        
-        let (data, response) = try await URLSession.shared.data(for: uRLRequest)
-        
-        print(getRequestInfo(data: data, response: response as? HTTPURLResponse))
-        
-        guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else { throw BGRNetworkError.responseError(errorMessage: "Something went wrong! Check your status code.")
-        }
-        
-        do {
-            let decodedData = try decoder.decode(model.responseModel.self, from: data)
-            return decodedData
-        } catch {
-            throw BGRNetworkError.decodingError(errorMessage: "Something went wrong! Please check your response model.")
-        }
-    }
-    
-    public func request<T: Codable>(model: RequestModel<T>, completion: @escaping (Result<T, BGRNetworkError>) -> Void) async {
+    public func request<T: Decodable>(model: RequestModel<T>, completion: @escaping (Result<T, BGRNetworkError>) -> Void) async {
         guard let uRLRequest = model.uRLRequest else {
             completion(.failure(.requestError(errorMessage: "Something went wrong! Please check your URL.")))
             return
@@ -84,8 +66,12 @@ public struct NetworkNew: BGRNetwork {
     }
 }
 
-extension NetworkNew {
-    @discardableResult private func getRequestInfo(data: Data, response: HTTPURLResponse?) -> String {
+extension BGRNetwork {
+    /// it prints the request info to console
+    /// - Parameters:
+    ///   - data: data from the request
+    ///   - response: response from the request
+    func getRequestInfo(data: Data, response: HTTPURLResponse?) {
         var requestInfo = "*** REQUEST INFO ***"
         requestInfo.append("\n********************")
         
@@ -101,7 +87,14 @@ extension NetworkNew {
         requestInfo.append("\n------------------")
         
         print(requestInfo)
-        
-        return requestInfo
+    }
+}
+
+extension Result {
+    /// if the result is .success then it returns data; otherwise, it returns nil
+    public var successData: Success? {
+        guard case .success(let success) = self else { return nil }
+
+        return success
     }
 }

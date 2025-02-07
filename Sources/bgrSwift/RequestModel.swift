@@ -7,17 +7,25 @@
 
 import Foundation
 
-public struct RequestModel<T: Codable> {
+public struct RequestModel<T: Decodable> {
     public let urlString: String
     public let method: RequestMethod
-    public let parameters: [String: Any]?
     public let responseModel: (T.Type)
+    public let parameters: [String: Any]?
+    public let headers: [(String?, String)]?
     
-    public init(urlString: String, method: RequestMethod, parameters: [String : Any]?, responseModel: T.Type) {
+    public init(
+        urlString: String,
+        method: RequestMethod,
+        responseModel: T.Type,
+        parameters: [String : Any]? = nil,
+        headers: [(String?, String)]? = nil
+    ) {
         self.urlString = urlString
         self.method = method
         self.parameters = parameters
         self.responseModel = responseModel
+        self.headers = headers
     }
     
     var uRLComponents: URLComponents? {
@@ -39,6 +47,12 @@ public struct RequestModel<T: Codable> {
         
         if let parameters, !parameters.isEmpty, method == .post {
             urlRequest.httpBody = try? JSONSerialization.data(withJSONObject: parameters)
+        }
+        
+        if let headers, !headers.isEmpty {
+            headers.forEach { (key, value) in
+                urlRequest.setValue(key, forHTTPHeaderField: value)
+            }
         }
         
         return urlRequest
