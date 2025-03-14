@@ -30,7 +30,7 @@ protocol BGRNetwork {
     func request<T: Decodable>(model: RequestModel<T>, completion: @escaping (Result<T, BGRNetworkError>) -> Void) async
 }
 
-public struct NetworkNew: BGRNetwork {
+public struct Network: BGRNetwork {
     public init() { }
     
     var decoder: JSONDecoder = {
