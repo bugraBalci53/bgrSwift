@@ -10,6 +10,7 @@ import Foundation
 public enum RequestMethod: String {
     case get = "GET"
     case post = "POST"
+    case delete = "DELETE"
 }
 
 public enum BGRNetworkError: Error {
