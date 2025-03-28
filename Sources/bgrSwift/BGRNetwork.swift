@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 public enum RequestMethod: String {
     case get = "GET"
@@ -65,6 +66,24 @@ public struct Network: BGRNetwork {
             completion(.failure(.requestError(errorMessage: "Something went wrong! Please check your connection.")))
         }
     }
+    
+    public func request<T: Decodable>(model: RequestModel<T>) -> AnyPublisher<T, BGRNetworkError> {
+        guard let uRLRequest = model.uRLRequest else {
+            return Fail(error: .requestError(errorMessage: "Something went wrong! Please check your URL."))
+                .eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: uRLRequest)
+            .tryMap { output -> Data in
+                getRequestInfo(data: output.data, response: output.response as? HTTPURLResponse)
+                return output.data
+            }
+            .decode(type: T.self, decoder: JSONDecoder())
+            .mapError { error in
+                return BGRNetworkError.decodingError(errorMessage: error.localizedDescription)
+            }
+            .eraseToAnyPublisher()
+    }
 }
 
 extension BGRNetwork {
@@ -81,7 +100,7 @@ extension BGRNetwork {
             requestInfo.append("\n* URL: \(response.url?.absoluteString ?? "-")")
             requestInfo.append("\n* Mime Type: \(response.mimeType ?? "-")")
         }
-
+        
         requestInfo.append("\n* Response Data ↓")
         requestInfo.append("\n________________⌋")
         requestInfo.append("\n \(String(data: data, encoding: .utf8) ?? "There is no data!")")
@@ -95,7 +114,7 @@ extension Result {
     /// if the result is .success then it returns data; otherwise, it returns nil
     public var successData: Success? {
         guard case .success(let success) = self else { return nil }
-
+        
         return success
     }
 }
