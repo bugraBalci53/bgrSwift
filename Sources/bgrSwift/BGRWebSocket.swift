@@ -58,12 +58,12 @@ public struct BGRWebSocket {
         
         DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
             if let handshakeMessage = model?.handshakeMessage,
-               let handshakeJson = self.getJsonString(for: handshakeMessage){
+               let handshakeJson = self.getJsonString(for: handshakeMessage) {
                 
                 self.send(handshakeJson)
                 
                 if webSocketTask?.state == .running {
-                    print("Websocket Connected!")
+                    print("✅ Websocket Connected!")
                     self.receiveMessages()
                     completion(true)
                 }
@@ -72,15 +72,20 @@ public struct BGRWebSocket {
         }
     }
     
+    func close() {
+        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        print("🔴 WebSocket shut down!")
+    }
+    
     public func send(_ jsonString: String) {
         guard let webSocketTask = self.webSocketTask else { return }
         
-        let formattedMessage = jsonString + "\u{001E}"  // SignalR için gerekli olabilir
+        let formattedMessage = jsonString + "\u{001E}"
         let message = URLSessionWebSocketTask.Message.string(formattedMessage)
         
         webSocketTask.send(message) { error in
             if let error = error {
-                print("❌ Message sending error!: \(error.localizedDescription)")
+                print("❗️Message sending error!: \(error.localizedDescription)")
             } else {
                 print("📨 Message sended!: \(message)")
             }
@@ -127,94 +132,3 @@ public struct BGRWebSocket {
         return jsonString
     }
 }
-
-//public class SignalRWebSocket {
-//    private var webSocketTask: URLSessionWebSocketTask?
-//    private let urlString = "ws://localhost:5168/chatHub"
-//    
-//    public init() { }
-//    
-//    public func connect() {
-//        guard let url = URL(string: urlString) else {
-//            print("❌ Geçersiz URL")
-//            return
-//        }
-//        
-//        var request = URLRequest(url: url)
-//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//        request.setValue("SignalR", forHTTPHeaderField: "Sec-WebSocket-Protocol") // Eğer sunucu istiyorsa
-//        
-//        let session = URLSession(configuration: .default)
-//        webSocketTask = session.webSocketTask(with: request)
-//        webSocketTask?.resume()
-//        
-//        print("🔌 WebSocket bağlantısı başlatıldı...")
-//        
-//        // 1 saniye bekleyip handshake mesajı gönder
-//        DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
-//            self.sendHandshake()
-//            self.receiveMessages()
-//        }
-//        
-//        // Mesajları dinlemeye başla
-//    }
-//    
-//    private func sendHandshake() {
-//        let handshakeMessage: [String: Any] = ["protocol": "json", "version": 1]
-//        guard let jsonData = try? JSONSerialization.data(withJSONObject: handshakeMessage),
-//              let jsonString = String(data: jsonData, encoding: .utf8) else {
-//            print("❌ JSON formatına çevirme hatası")
-//            return
-//        }
-//        
-//        sendMessage(jsonString)
-//    }
-//    
-//    public func sendMessage(_ message: String) {
-//        guard let webSocketTask = webSocketTask else {
-//            print("❌ WebSocket bağlantısı yok")
-//            return
-//        }
-//        
-//        let formattedMessage = message + "\u{001E}"  // SignalR için gerekli olabilir
-//        let wsMessage = URLSessionWebSocketTask.Message.string(formattedMessage)
-//        
-//        webSocketTask.send(wsMessage) { error in
-//            if let error = error {
-//                print("❌ Mesaj gönderme hatası: \(error.localizedDescription)")
-//            } else {
-//                print("📨 Mesaj gönderildi: \(formattedMessage)")
-//            }
-//        }
-//    }
-//    
-//    private func receiveMessages() {
-//        guard let webSocketTask = webSocketTask else { return }
-//        
-//        webSocketTask.receive { [weak self] result in
-//            switch result {
-//            case .success(let message):
-//                switch message {
-//                case .string(let text):
-//                    print("📩 Gelen mesaj: \(text)")
-//                default:
-//                    print("⚠️ Beklenmeyen mesaj türü")
-//                }
-//                
-//                // Yeni mesajları dinlemeye devam et
-//                self?.receiveMessages()
-//                
-//            case .failure(let error):
-//                print("❌ WebSocket mesaj alma hatası: \(error.localizedDescription)")
-//                if webSocketTask.state != .running {
-//                    print("🚨 WebSocket bağlantısı kapandı!")
-//                }
-//            }
-//        }
-//    }
-//    
-//    func close() {
-//        webSocketTask?.cancel(with: .goingAway, reason: nil)
-//        print("🔌 WebSocket bağlantısı kapatıldı.")
-//    }
-//}
