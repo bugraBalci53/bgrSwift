@@ -72,7 +72,7 @@ public struct BGRWebSocket {
         }
     }
     
-    func close() {
+    public func close() {
         webSocketTask?.cancel(with: .goingAway, reason: nil)
         print("🔴 WebSocket shut down!")
     }
