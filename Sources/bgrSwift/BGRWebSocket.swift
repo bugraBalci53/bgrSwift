@@ -23,7 +23,7 @@ public struct BGRWebSocketModel {
     }
     
     var uRLRequest: URLRequest? {
-        guard let url = URL(string: self.urlString) else { return nil }
+        guard let url = URL(string: self.urlString) else { return nil }
         
         var urlRequest = URLRequest(url: url)
         
@@ -44,7 +44,7 @@ public struct BGRWebSocket {
     public var onMessageReceived: ((String) -> Void)?
     
     public init(model: BGRWebSocketModel) {
-        guard let urlRequest = model.uRLRequest else { return }
+        guard let urlRequest = model.uRLRequest else { return }
         
         self.model = model
         
@@ -72,13 +72,13 @@ public struct BGRWebSocket {
         }
     }
     
-    public func close() {
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
+    public func close(for closeCode: URLSessionWebSocketTask.CloseCode) {
+        webSocketTask?.cancel(with: closeCode, reason: nil)
         print("🔴 WebSocket shut down!")
     }
     
     public func send(_ jsonString: String) {
-        guard let webSocketTask = self.webSocketTask else { return }
+        guard let webSocketTask = self.webSocketTask else { return }
         
         let formattedMessage = jsonString + "\u{001E}"
         let message = URLSessionWebSocketTask.Message.string(formattedMessage)
@@ -110,9 +110,9 @@ public struct BGRWebSocket {
                 self.receiveMessages()
                 
             case .failure(let error):
-                print("❌ WebSocket mesaj alma hatası: \(error.localizedDescription)")
+                print("❌ WebSocket receive message error: \(error.localizedDescription)")
                 if webSocketTask.state != .running {
-                    print("🚨 WebSocket bağlantısı kapandı!")
+                    print("🚨 WebSocket shut down!")
                 }
             }
         }
@@ -120,14 +120,14 @@ public struct BGRWebSocket {
     
     public func getJsonString(for dictionary: [String: Any]) -> String? {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: dictionary),
-              let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
+              let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
         
         return jsonString
     }
     
     public func getJsonString<T: Codable>(for model: T) -> String? {
         guard let jsonData = try? JSONEncoder().encode(model),
-              let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
+              let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
         
         return jsonString
     }

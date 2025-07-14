@@ -12,6 +12,10 @@ public enum RequestMethod: String {
     case get = "GET"
     case post = "POST"
     case delete = "DELETE"
+    case put = "PUT"
+    case patch = "PATCH"
+    case head = "HEAD"
+    case options = "OPTIONS"
 }
 
 public enum BGRNetworkError: Error {
@@ -116,5 +120,29 @@ extension Result {
         guard case .success(let success) = self else { return nil }
         
         return success
+    }
+}
+
+extension AnyPublisher {
+    func onLoading(_ bindTo: PassthroughSubject<Bool, Never>?) -> AnyPublisher {
+        return self
+            .handleEvents(
+                receiveSubscription: { _ in
+                    bindTo?.send((true))
+                },
+                receiveOutput: { response in
+                    bindTo?.send((false))
+                },
+                receiveCompletion: { _ in
+                    bindTo?.send((false))
+                },
+                receiveCancel: {
+                    bindTo?.send((false))
+                },
+                receiveRequest: { _ in
+                    bindTo?.send((true))
+                }
+            )
+            .eraseToAnyPublisher()
     }
 }
