@@ -124,7 +124,7 @@ extension Result {
 }
 
 extension AnyPublisher {
-    func onLoading(_ bindTo: PassthroughSubject<Bool, Never>?) -> AnyPublisher {
+    public func onLoading(_ bindTo: PassthroughSubject<Bool, Never>?) -> AnyPublisher {
         return self
             .handleEvents(
                 receiveSubscription: { _ in
